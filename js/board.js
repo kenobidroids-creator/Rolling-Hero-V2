@@ -26,12 +26,17 @@ function generateGridMap(dim) {
 const GRID_MAP = generateGridMap(BOARD_DIM);
 
 // ── Base tile type pool ──────────────────────────────────────
-// Weights are adjusted per lap: more combat, less healing.
+// Total weight = 21.  Approximate distribution across 22 random tiles:
+//   combat ~6, empty ~6, event ~3, heal ~2, loot ~2, gamble ~1, forge ~1
+// (Weights are further adjusted per lap in weightedRandomTile.)
 const TILE_DEFS = [
-    { type: 'combat', label: 'FIGHT', spriteKey: 'sword', weight: 4 },
-    { type: 'loot',   label: 'LOOT',  spriteKey: 'chest', weight: 2 },
-    { type: 'heal',   label: 'HEAL',  spriteKey: 'cross', weight: 2 },
-    { type: 'empty',  label: '',      spriteKey: null,    weight: 2 },
+    { type: 'combat', label: 'FIGHT',  spriteKey: 'sword', weight: 6 },
+    { type: 'empty',  label: '',       spriteKey: null,    weight: 6 },
+    { type: 'event',  label: 'EVENT',  spriteKey: 'cross', weight: 3 },
+    { type: 'heal',   label: 'HEAL',   spriteKey: 'cross', weight: 2 },
+    { type: 'loot',   label: 'LOOT',   spriteKey: 'chest', weight: 2 },
+    { type: 'gamble', label: 'GAMBLE', spriteKey: null,    weight: 1 },
+    { type: 'forge',  label: 'FORGE',  spriteKey: null,    weight: 1 },
 ];
 
 /**
@@ -73,6 +78,13 @@ function getTileConfig(index, lap = 0) {
 }
 
 // ── DOM tile factory ─────────────────────────────────────────
+// Emoji icons for tiles that don't use a canvas sprite
+const TILE_EMOJI = {
+    event:  '❓',
+    gamble: '🎰',
+    forge:  '🔨',
+};
+
 function buildTileEl(index, cfg) {
     const [row, col] = GRID_MAP[index];
     const tile = document.createElement('div');
@@ -93,8 +105,15 @@ function buildTileEl(index, cfg) {
             <canvas class="tile-sprite" width="20" height="20" aria-hidden="true"></canvas>
             <span class="tile-label tile-label--miniboss">MINI</span>`;
     } else if (cfg.spriteKey) {
+        // Canvas sprite tile (combat, loot, heal)
         tile.innerHTML = `
             <canvas class="tile-sprite" width="18" height="18" aria-hidden="true"></canvas>
+            ${cfg.label ? `<span class="tile-label">${cfg.label}</span>` : ''}`;
+    } else if (TILE_EMOJI[cfg.type]) {
+        // Emoji icon tile (event, gamble, forge)
+        const emojiSize = `clamp(11px,3.5vw,17px)`;
+        tile.innerHTML = `
+            <span style="font-size:${emojiSize};line-height:1">${TILE_EMOJI[cfg.type]}</span>
             ${cfg.label ? `<span class="tile-label">${cfg.label}</span>` : ''}`;
     } else {
         tile.innerHTML = `<span class="tile-empty-dot">·</span>`;

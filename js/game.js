@@ -98,7 +98,6 @@ async function handleTileLanding(index) {
             break;
 
         case 'loot': {
-            // Loot tile: skip combat, go straight to 3-item pick
             openLootSelection(generateLootChoices(3));
             markTileVisited(index);
             break;
@@ -113,6 +112,21 @@ async function handleTileLanding(index) {
             updateUI();
             break;
         }
+
+        case 'event':
+            triggerEvent();
+            markTileVisited(index);
+            break;
+
+        case 'gamble':
+            triggerGamble();
+            markTileVisited(index);
+            break;
+
+        case 'forge':
+            triggerForge();
+            markTileVisited(index);
+            break;
 
         case 'empty':
         default:

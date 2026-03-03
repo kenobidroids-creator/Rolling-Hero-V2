@@ -144,6 +144,18 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════
+     MINI-GAME MODAL
+     Shared container for EVENT, GAMBLE, and FORGE tiles.
+     Content is injected by minigames.js per tile type.
+═══════════════════════════════════════════════════════════ -->
+<div id="minigame-modal" style="display:none">
+    <div class="modal-box modal-box--minigame">
+        <div id="minigame-body"></div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
      SHOP MODAL
 ═══════════════════════════════════════════════════════════ -->
 <div id="shop-modal" style="display:none">
@@ -234,6 +246,7 @@
 <script src="js/ui.js"></script>
 <script src="js/loot.js"></script>
 <script src="js/combat.js"></script>
+<script src="js/minigames.js"></script>
 <script src="js/game.js"></script>
 
 </body>

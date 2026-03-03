@@ -64,22 +64,21 @@ body {
 }
 
 /* ── Clean mode — applied to <body> by settings.js ──────────── */
+/* Only changes the font family. All pixel borders, sprites and
+   colours stay identical — this is purely an accessibility aid
+   for people who find Press Start 2P hard to read.               */
 body.clean-mode {
     --font: var(--font-clean);
-    background-image: none;
+    background-image: none;   /* remove scanline overlay */
 }
-body.clean-mode .tile  { image-rendering: auto; }
-body.clean-mode .hp-bar-outer,
-body.clean-mode .battle-hp-bar-wrap { border-radius: 8px; }
-body.clean-mode #board-hp-bar,
-body.clean-mode .hp-bar-fill        { background-image: none; border-radius: 8px; }
-body.clean-mode .pixel-btn          { border-radius: 8px; box-shadow: none !important; }
-body.clean-mode .pixel-btn:active   { transform: scale(.96); }
-body.clean-mode .tile               { border-radius: 8px; }
-body.clean-mode .modal-box          { border-radius: 16px; }
-body.clean-mode .loot-card          { border-radius: 12px; }
-body.clean-mode .equip-slot         { border-radius: 10px; }
-body.clean-mode #game-title         { font-size: clamp(1rem, 5vw, 1.6rem); letter-spacing: 1px; }
+/* Slightly larger base text in clean mode so small labels read better */
+body.clean-mode .stat-item,
+body.clean-mode .hp-label,
+body.clean-mode .tile-label,
+body.clean-mode .loot-card-rarity,
+body.clean-mode .loot-card-name,
+body.clean-mode .equip-slot-name  { letter-spacing: 0; }
+body.clean-mode #game-title { font-size: clamp(1.1rem, 5vw, 1.6rem); letter-spacing: .5px; }
 
 
 /* ── 3. Layout ──────────────────────────────────────────────── */
@@ -206,6 +205,11 @@ body.clean-mode #game-title         { font-size: clamp(1rem, 5vw, 1.6rem); lette
 .tile--combat   { border-color: #3a1020;       background: #12080f; }
 .tile--loot     { border-color: #3a2a08;       background: #120e04; }
 .tile--heal     { border-color: #0a3020;       background: #06110a; }
+.tile--event    { border-color: #1a1050;       background: #0a0818; }
+.tile--gamble   { border-color: #3a0a3a;       background: #180810;
+                  box-shadow: 0 0 5px rgba(163,53,238,.2); }
+.tile--forge    { border-color: #2a1800;       background: #110900;
+                  box-shadow: 0 0 5px rgba(255,120,0,.15); }
 .tile--empty    { opacity: .45; }
 .tile--visited  { opacity: .28; filter: grayscale(.6); pointer-events: none; }
 
@@ -219,6 +223,9 @@ body.clean-mode #game-title         { font-size: clamp(1rem, 5vw, 1.6rem); lette
 .tile-label--boss    { color: var(--gold); text-shadow: 0 0 8px rgba(255,204,0,.8);
                        animation: pulse-gold 1.8s ease-in-out infinite; }
 .tile-label--miniboss{ color: #e67e22; animation: pulse-gold 2.2s ease-in-out infinite; }
+.tile--event  .tile-label { color: #8888ff; text-shadow: 0 0 6px rgba(136,136,255,.5); }
+.tile--gamble .tile-label { color: #c060ff; text-shadow: 0 0 6px rgba(192,96,255,.5); }
+.tile--forge  .tile-label { color: #ff8800; text-shadow: 0 0 6px rgba(255,136,0,.5); }
 
 .tile-sprite {
     image-rendering: pixelated; image-rendering: crisp-edges;
@@ -481,7 +488,7 @@ body.clean-mode #game-title         { font-size: clamp(1rem, 5vw, 1.6rem); lette
 /* ── 11. Equipment Slots ────────────────────────────────────── */
 .equip-section-label {
     font-size: .42rem; color: var(--text-dim); letter-spacing: 2px;
-    align-self: flex-start; padding-left: 2px;
+    text-align: center; width: 100%; max-width: 460px;
 }
 
 .equipment-slots-row {
@@ -637,6 +644,68 @@ body.clean-mode #game-title         { font-size: clamp(1rem, 5vw, 1.6rem); lette
 }
 #shop-modal[style*="flex"],
 #settings-modal[style*="flex"] { display: flex !important; }
+
+
+/* ── Mini-game modal ─────────────────────────────────────────── */
+#minigame-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.9); z-index: 350;
+    align-items: center; justify-content: center; padding: 16px;
+}
+#minigame-modal[style*="flex"] { display: flex !important; }
+
+.modal-box--minigame {
+    border-color: #3a2a60;
+    box-shadow: 0 0 32px rgba(160,80,255,.25);
+    padding: 20px 18px; max-width: 380px; width: 100%;
+}
+
+/* Shared mini-game layout */
+.mg-icon  { font-size: 3rem; text-align: center; margin-bottom: 6px; }
+.mg-title { font-size: clamp(.55rem,3.5vw,.8rem); color: var(--gold); letter-spacing: 3px; text-align: center; margin-bottom: 10px; }
+.mg-desc  { font-family: var(--font-clean); font-size: .8rem; color: var(--text-dim); text-align: center; line-height: 1.6; margin-bottom: 14px; }
+.mg-result {
+    font-size: clamp(.5rem,3vw,.7rem); color: var(--teal); text-align: center;
+    background: rgba(78,204,163,.1); border: 1px solid rgba(78,204,163,.3);
+    border-radius: var(--radius); padding: 8px 12px; margin: 10px 0;
+}
+.mg-gold-display { font-size: .5rem; color: var(--text-dim); text-align: center; margin-bottom: 10px; }
+.mg-gold-display b { color: var(--gold); }
+.mg-no-gold { font-family: var(--font-clean); font-size: .75rem; color: var(--accent); text-align: center; margin-bottom: 8px; }
+
+/* Card flip */
+.mg-cards-row { display: flex; gap: 10px; justify-content: center; margin: 14px 0; }
+.mg-card {
+    width: 80px; height: 100px;
+    background: var(--panel-lite); border: 2px solid #3a2060;
+    border-radius: 6px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer;
+    transition: transform .15s, border-color .15s;
+    gap: 4px;
+}
+.mg-card:hover:not(.mg-card--gold):not(.mg-card--trap):not(.mg-card--empty):not(.mg-card--back) {
+    transform: translateY(-4px); border-color: var(--gold);
+}
+.mg-card--gold  { border-color: var(--gold);   background: #1a1400; cursor: default; }
+.mg-card--trap  { border-color: var(--accent);  background: #1a0008; cursor: default; }
+.mg-card--empty { border-color: var(--border);  background: var(--panel); cursor: default; }
+.mg-card--back  { cursor: default; opacity: .5; }
+.mg-card-back   { font-size: 1.8rem; color: #3a2060; }
+.mg-card-icon   { font-size: 1.6rem; }
+.mg-card-label  { font-size: .38rem; letter-spacing: 1px; color: var(--text-dim); }
+
+/* Forge */
+.forge-options { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 14px; }
+.forge-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel-lite); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px 10px; gap: 8px;
+}
+.forge-row--disabled { opacity: .4; }
+.forge-slot-info { display: flex; align-items: center; gap: 8px; text-align: left; }
+.forge-slot-icon { font-size: 1.4rem; }
+.forge-slot-name { font-size: .4rem; color: var(--text-dim); letter-spacing: 1px; }
+.forge-slot-item { font-size: .36rem; line-height: 1.4; }
 
 
 /* ── 16. Animations ─────────────────────────────────────────── */
