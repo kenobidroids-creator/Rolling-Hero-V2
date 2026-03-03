@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rolling Hero</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN BOARD SCREEN
+═══════════════════════════════════════════════════════════ -->
+<div id="game-container">
+
+    <!-- Title bar with settings button -->
+    <div id="title-bar">
+        <h1 id="game-title">⚔ ROLLING HERO ⚔</h1>
+        <button id="settings-btn" class="icon-btn" onclick="openSettings()" aria-label="Settings">⚙</button>
+    </div>
+
+    <!-- Floor milestone banner (hidden unless floor 5 or 10) -->
+    <div id="floor-banner" style="display:none"></div>
+
+    <!-- Stats panel -->
+    <div id="stats-panel">
+        <div class="hp-label">HEALTH</div>
+        <div class="hp-bar-outer">
+            <div id="board-hp-bar"></div>
+        </div>
+        <span id="board-hp-text">100 / 100</span>
+
+        <div class="stats-grid">
+            <div class="stat-item">Floor <b id="stat-floor">1</b></div>
+            <div class="stat-item">Lap <b id="stat-lap">0/3</b></div>
+            <div class="stat-item stat--gold">Gold <b id="stat-gold">0</b>💰</div>
+            <div class="stat-item stat--atk">ATK <b id="stat-atk">10</b></div>
+            <div class="stat-item">DEF <b id="stat-def">2</b></div>
+            <div class="stat-item">DODGE <b id="stat-dodge">1%</b></div>
+            <div class="stat-item stat--teal">VMP <b id="stat-vampirism">0%</b></div>
+        </div>
+    </div>
+
+    <!-- Board grid -->
+    <div id="board"></div>
+
+    <!-- Controls row -->
+    <div id="controls">
+        <div id="dice-display" aria-label="Last dice roll">🎲</div>
+        <button id="roll-btn" class="pixel-btn" onclick="playTurn()">ROLL DICE</button>
+        <button id="board-potion-btn" class="pixel-btn" onclick="usePotion()" style="display:none">
+            🧪×<span id="board-potion-count">0</span>
+        </button>
+    </div>
+
+    <!-- Event log -->
+    <div id="log">Welcome, adventurer!</div>
+
+    <!-- Reset -->
+    <button id="reset-btn" onclick="SaveManager.resetGame()">RESET PROGRESS</button>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     BATTLE OVERLAY
+═══════════════════════════════════════════════════════════ -->
+<div id="battle-screen" class="overlay" style="display:none">
+
+    <h2 id="enemy-name">ENCOUNTER!</h2>
+
+    <!-- Enemy fighter block -->
+    <div class="battle-fighter battle-fighter--enemy">
+        <canvas id="battle-enemy-sprite" width="64" height="64" aria-hidden="true"></canvas>
+        <div class="battle-hp-block">
+            <div class="battle-hp-header">
+                <span>ENEMY</span><span id="e-hp-text">25/25</span>
+            </div>
+            <div class="battle-hp-bar-wrap">
+                <div id="e-hp-bar" class="hp-bar-fill hp-bar-fill--enemy" style="width:100%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VS divider — compact to close the gap -->
+    <div class="battle-vs">— VS —</div>
+
+    <!-- Hero fighter block -->
+    <div class="battle-fighter battle-fighter--hero">
+        <div class="battle-hp-block">
+            <div class="battle-hp-header">
+                <span>HERO</span><span id="p-hp-text">100/100</span>
+            </div>
+            <div class="battle-hp-bar-wrap">
+                <div id="p-hp-bar" class="hp-bar-fill" style="width:100%"></div>
+            </div>
+        </div>
+        <canvas id="battle-hero-sprite" width="64" height="64" aria-hidden="true"></canvas>
+    </div>
+
+    <!-- Round log -->
+    <div id="battle-log" class="battle-log">The battle begins...</div>
+
+    <!-- Potion during combat -->
+    <div class="battle-actions">
+        <button id="battle-potion-btn" class="pixel-btn pixel-btn--teal"
+                onclick="usePotion()" style="display:none">
+            🧪 HEAL ×<span id="battle-potion-count">0</span>
+        </button>
+    </div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     LOOT SELECTION SCREEN
+     3 item cards in the centre; equipment slots at the bottom.
+     Cards can be dragged to a slot (desktop) or tapped to
+     select then tapped on a slot (mobile).
+═══════════════════════════════════════════════════════════ -->
+<div id="loot-selection" style="display:none">
+
+    <div class="loot-sel-header">
+        <span class="loot-sel-title">⚡ CHOOSE YOUR LOOT</span>
+        <span class="loot-sel-hint">Hover/hold to compare · Drag or tap+slot to equip</span>
+    </div>
+
+    <!-- 3 item cards -->
+    <div id="loot-cards" class="loot-cards-grid"></div>
+
+    <!-- Floating stat-comparison tooltip (positioned by JS) -->
+    <div id="stat-comparison" class="stat-comparison" style="display:none"></div>
+
+    <!-- Equipment slots row -->
+    <div class="equip-section-label">EQUIPMENT SLOTS</div>
+    <div id="equipment-slots" class="equipment-slots-row"></div>
+
+    <!-- Skip all -->
+    <button class="pixel-btn pixel-btn--grey loot-skip-btn" onclick="closeLootSelection()">
+        SKIP ALL
+    </button>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SHOP MODAL
+═══════════════════════════════════════════════════════════ -->
+<div id="shop-modal" style="display:none">
+    <div class="modal-box modal-box--gold">
+        <div class="modal-header modal-header--gold">🏪 SHOP</div>
+        <div class="shop-gold-display">Gold: <span id="shop-gold">0</span>💰</div>
+        <div id="shop-items"></div>
+        <button class="pixel-btn pixel-btn--teal full-btn" onclick="closeShop()">CONTINUE JOURNEY</button>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SETTINGS MODAL
+═══════════════════════════════════════════════════════════ -->
+<div id="settings-modal" style="display:none">
+    <div class="modal-box modal-box--settings">
+        <div class="modal-header modal-header--settings">⚙ SETTINGS</div>
+
+        <div class="setting-row">
+            <div class="setting-info">
+                <div class="setting-name">VISUAL STYLE</div>
+                <div class="setting-desc">Switch between pixel-art font and a clean readable font</div>
+            </div>
+            <div class="style-toggle" onclick="toggleVisualStyle()">
+                <span id="style-mode-label">8-BIT PIXEL</span>
+                <div class="toggle-track">
+                    <div id="style-toggle-indicator" class="toggle-thumb"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="setting-row">
+            <div class="setting-info">
+                <div class="setting-name">RESET PROGRESS</div>
+                <div class="setting-desc">Wipe all save data and start fresh</div>
+            </div>
+            <button class="pixel-btn pixel-btn--danger sm-btn" onclick="SaveManager.resetGame()">RESET</button>
+        </div>
+
+        <button class="pixel-btn pixel-btn--teal full-btn" onclick="closeSettings()">CLOSE</button>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     GAME OVER SCREEN
+═══════════════════════════════════════════════════════════ -->
+<div id="game-over-screen" style="display:none">
+    <div class="end-screen end-screen--defeat">
+        <div class="end-skull">💀</div>
+        <div class="end-title end-title--red">GAME OVER</div>
+        <div class="end-stats">
+            <div class="end-stat-row">Floor reached <b id="go-floor">1</b></div>
+            <div class="end-stat-row">Gold earned   <b id="go-gold">0</b>💰</div>
+            <div class="end-stat-row">Attack        <b id="go-atk">10</b></div>
+        </div>
+        <button class="pixel-btn pixel-btn--danger end-btn" onclick="SaveManager.resetGame()">PLAY AGAIN</button>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     VICTORY SCREEN
+═══════════════════════════════════════════════════════════ -->
+<div id="victory-screen" style="display:none">
+    <div class="end-screen end-screen--victory">
+        <div class="end-skull">🏆</div>
+        <div class="end-title end-title--gold">VICTORY!</div>
+        <p class="end-sub">The dungeon falls silent. You are legend.</p>
+        <div class="end-stats">
+            <div class="end-stat-row">Gold earned <b id="vc-gold">0</b>💰</div>
+            <div class="end-stat-row">Attack      <b id="vc-atk">0</b></div>
+        </div>
+        <button class="pixel-btn pixel-btn--teal end-btn" onclick="SaveManager.resetGame()">PLAY AGAIN</button>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS  (dependency order matters)
+═══════════════════════════════════════════════════════════ -->
+<script src="js/saveManager.js"></script>
+<script src="js/state.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/board.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/loot.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/game.js"></script>
+
+</body>
+</html>
